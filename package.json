@@ -6,7 +6,10 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "db:dump": "supabase db dump --linked --schema public > supabase/schema.sql",
+    "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts",
+    "db:pull": "supabase db pull --linked"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
