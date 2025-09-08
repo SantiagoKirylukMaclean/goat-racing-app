@@ -1,38 +1,42 @@
 name: Supabase Migrations + Vercel (single env)
+
 on:
   push:
     branches: [ main ]
     paths-ignore:
       - 'src/lib/database.types.ts'
   workflow_dispatch:
+
 concurrency:
   group: db-single-${{ github.ref }}
   cancel-in-progress: false
+
 permissions:
   contents: read
+
 jobs:
   migrate-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: supabase/setup-cli@v1
-        with: { version: latest }
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
 
-      - name: Link Supabase project
-        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
+      # Aplica TODAS las migraciones pendientes usando la URL del pooler (secret SUPABASE_DB_URL)
       - name: Apply migrations
-        run: supabase db push
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase db push --db-url "${{ secrets.SUPABASE_DB_URL }}"
 
+      # Genera types TS desde el proyecto (secret SUPABASE_PROJECT_REF + ACCESS_TOKEN)
       - name: Generate TypeScript types
-        run: supabase gen types typescript --linked --schema public > src/lib/database.types.ts
+        run: supabase gen types typescript --project-id ${{ secrets.SUPABASE_PROJECT_REF }} --schema public > src/lib/database.types.ts
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
+      # Dispara redeploy en Vercel (secret VERCEL_DEPLOY_HOOK_URL)
       - name: Trigger Vercel deploy
         run: curl -X POST "${{ secrets.VERCEL_DEPLOY_HOOK_URL }}"
