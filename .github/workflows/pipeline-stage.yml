@@ -27,6 +27,9 @@ jobs:
         with:
           version: latest
 
+      - name: Mostrar versión CLI
+        run: supabase --version
+
       - name: Aplicar migraciones a Stage
         env:
           SUPABASE_DB_URL_STAGE: ${{ secrets.SUPABASE_DB_URL_STAGE }}
@@ -50,7 +53,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN_STAGE: ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGE }}
         run: |
           if [ -n "$SUPABASE_PROJECT_REF_STAGE" ] && [ -n "$SUPABASE_ACCESS_TOKEN_STAGE" ]; then
-            supabase gen types typescript --project-id "$SUPABASE_PROJECT_REF_STAGE" --schema public > /dev/null
+            supabase gen types typescript --project-id "$SUPABASE_PROJECT_REF_STAGE" --schema public > src/lib/database.types.ts
             echo "Types generados (no se commitean en CI)."
           else
             echo "Secrets para gen types (Stage) no configurados; se omite."
