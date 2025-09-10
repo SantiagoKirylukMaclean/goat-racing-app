@@ -1,0 +1,50 @@
+name: Fix pnpm lockfile
+
+on:
+  # lo disparo manualmente desde la UI de Actions
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch a actualizar (ej: nombre de la rama del PR)
+        required: true
+        default: ${{ github.ref_name }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Enable corepack
+        run: corepack enable
+
+      - name: PNPM version
+        run: pnpm -v
+
+      # Si usás paquetes privados, descomenta y agrega NPM_TOKEN en Secrets
+      # - name: Auth npm (privado)
+      #   run: npm config set //registry.npmjs.org/:_authToken "${{ secrets.NPM_TOKEN }}"
+
+      - name: Regenerar lockfile
+        run: pnpm install --lockfile-only
+
+      - name: Commit si cambió el lockfile
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'chore(ci): sync pnpm-lock.yaml'
+          file_pattern: pnpm-lock.yaml
+          branch: ${{ github.event.inputs.ref }}
