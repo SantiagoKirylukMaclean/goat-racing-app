@@ -1,0 +1,29 @@
+name: Supabase DB Migrate (Stage)
+
+on:
+  push:
+    branches:
+      - stage
+  workflow_dispatch:
+
+jobs:
+  migrate-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Supabase CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/supabase/cli/main/install.sh | sh
+
+      - name: Aplicar migraciones a Stage
+        env:
+          SUPABASE_DB_URL_STAGE: ${{ secrets.SUPABASE_DB_URL_STAGE }}
+        run: |
+          set -e
+          if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
+            ./bin/supabase migration up --db-url "$SUPABASE_DB_URL_STAGE" --non-interactive
+          else
+            echo "No hay migraciones en supabase/migrations; se omite."
+          fi
