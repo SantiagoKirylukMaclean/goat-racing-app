@@ -26,11 +26,11 @@ jobs:
 
       - name: Aplicar migraciones a Stage
         env:
-          SUPABASE_DB_URL_STAGE: ${{ secrets.SUPABASE_DB_URL_STAGE }}
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL_STAGE }}
         run: |
           set -e
           if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
-            supabase migration up --db-url "$SUPABASE_DB_URL_STAGE" --non-interactive
+            supabase migration up --non-interactive
           else
             echo "No hay migraciones en supabase/migrations; se omite."
           fi

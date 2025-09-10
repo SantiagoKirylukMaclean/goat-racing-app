@@ -26,11 +26,11 @@ jobs:
 
       - name: Aplicar migraciones a Prod
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -e
           if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
-            supabase migration up --db-url "$SUPABASE_DB_URL" --non-interactive
+            supabase migration up --non-interactive
           else
             echo "No hay migraciones en supabase/migrations; se omite."
           fi
