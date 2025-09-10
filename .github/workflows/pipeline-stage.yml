@@ -18,6 +18,7 @@ jobs:
   migrate-and-deploy-stage:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -47,12 +48,13 @@ jobs:
             echo "No hay migraciones en supabase/migrations; se omite."
           fi
 
-      - name: (Opcional) Generar types TS desde Supabase (Stage)
+      # Generar types (opcional). IMPORTANTE: mapear el token de Stage a SUPABASE_ACCESS_TOKEN
+      - name: Generar types TS desde Supabase (Stage) (opcional)
         env:
           SUPABASE_PROJECT_REF_STAGE: ${{ secrets.SUPABASE_PROJECT_REF_STAGE }}
-          SUPABASE_ACCESS_TOKEN_STAGE: ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGE }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGE }}   # 👈 mapeo correcto
         run: |
-          if [ -n "$SUPABASE_PROJECT_REF_STAGE" ] && [ -n "$SUPABASE_ACCESS_TOKEN_STAGE" ]; then
+          if [ -n "$SUPABASE_PROJECT_REF_STAGE" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
             supabase gen types typescript --project-id "$SUPABASE_PROJECT_REF_STAGE" --schema public > src/lib/database.types.ts
             echo "Types generados (no se commitean en CI)."
           else
