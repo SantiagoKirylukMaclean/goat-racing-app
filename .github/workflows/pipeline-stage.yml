@@ -1,0 +1,53 @@
+name: Stage pipeline (Supabase migrate + Vercel deploy)
+
+on:
+  push:
+    branches: [ stage ]
+  workflow_dispatch:
+
+concurrency:
+  group: stage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migrate-and-deploy-stage:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_PROJECT_REF_STAGE: ${{ secrets.SUPABASE_PROJECT_REF_STAGE }}
+      SUPABASE_ACCESS_TOKEN_STAGE: ${{ secrets.SUPABASE_ACCESS_TOKEN_STAGE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Aplicar migraciones a Stage
+        env:
+          SUPABASE_DB_URL_STAGE: ${{ secrets.SUPABASE_DB_URL_STAGE }}
+        run: |
+          set -e
+          if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
+            supabase migration up --db-url "$SUPABASE_DB_URL_STAGE" --non-interactive
+          else
+            echo "No hay migraciones en supabase/migrations; se omite."
+          fi
+
+      - name: (Opcional) Generar tipos TypeScript desde Supabase (Stage)
+        if: ${{ env.SUPABASE_PROJECT_REF_STAGE != '' && env.SUPABASE_ACCESS_TOKEN_STAGE != '' }}
+        run: |
+          SUPABASE_PROJECT_REF="$SUPABASE_PROJECT_REF_STAGE" \
+          SUPABASE_ACCESS_TOKEN="$SUPABASE_ACCESS_TOKEN_STAGE" \
+          supabase gen types typescript --project-id "$SUPABASE_PROJECT_REF_STAGE" --schema public > /dev/null || true
+          echo "Tipos generados (no se commitea en CI)."
+
+      - name: Trigger Vercel Deploy (Stage)
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL_STAGE }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::Falta VERCEL_DEPLOY_HOOK_URL_STAGE"; exit 1
+          fi
+          curl -s -X POST "$HOOK" && echo "Deploy hook enviado (Stage)."
