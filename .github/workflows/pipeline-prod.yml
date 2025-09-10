@@ -3,18 +3,21 @@ name: Production pipeline (Supabase migrate + Vercel deploy)
 on:
   push:
     branches: [ main ]
+    paths-ignore:
+      - 'src/lib/database.types.ts'
   workflow_dispatch:
 
 concurrency:
   group: prod-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   migrate-and-deploy-prod:
     runs-on: ubuntu-latest
-    env:
-      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,19 +32,29 @@ jobs:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -e
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "::error::Falta el secret SUPABASE_DB_URL"; exit 1
+          fi
+          if echo "$SUPABASE_DB_URL" | grep -qi "pool"; then
+            echo "::warning::La URL parece de pooling; se recomienda non-pooling para migraciones."
+          fi
           if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
             supabase migration up --db-url "$SUPABASE_DB_URL" --non-interactive
           else
             echo "No hay migraciones en supabase/migrations; se omite."
           fi
 
-      - name: (Opcional) Generar tipos TypeScript desde Supabase
-        if: ${{ env.SUPABASE_PROJECT_REF != '' && env.SUPABASE_ACCESS_TOKEN != '' }}
+      - name: (Opcional) Generar types TS desde Supabase
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
-          supabase gen types typescript \
-            --project-id "$SUPABASE_PROJECT_REF" \
-            --schema public > src/lib/database.types.ts || true
-          git status --porcelain | grep "database.types.ts" && echo "Tipos actualizados (no se commitea en CI)."
+          if [ -n "$SUPABASE_PROJECT_REF" ] && [ -n "$SUPABASE_ACCESS_TOKEN" ]; then
+            supabase gen types typescript --project-id "$SUPABASE_PROJECT_REF" --schema public > src/lib/database.types.ts
+            echo "Types generados (no se commitean en CI)."
+          else
+            echo "Secrets para gen types no configurados; se omite."
+          fi
 
       - name: Trigger Vercel Deploy (Prod)
         env:
