@@ -27,6 +27,9 @@ jobs:
         with:
           version: latest
 
+      - name: Mostrar versión CLI
+        run: supabase --version
+
       - name: Aplicar migraciones a Prod
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -39,7 +42,8 @@ jobs:
             echo "::warning::La URL parece de pooling; se recomienda non-pooling para migraciones."
           fi
           if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
-            supabase migration up --db-url "$SUPABASE_DB_URL" --non-interactive
+            # Reemplazo de --non-interactive por --yes
+            supabase migration up --db-url "$SUPABASE_DB_URL" --yes
           else
             echo "No hay migraciones en supabase/migrations; se omite."
           fi
