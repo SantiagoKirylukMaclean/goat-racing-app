@@ -52,18 +52,14 @@ cp env/.env.stage.example .env.local
 npm run dev:stage
 ```
 
-### Pipeline
-
-Cada push o merge a `stage` ejecuta:
-
-1. `.github/workflows/db-migrate-stage.yml` para aplicar migraciones de Supabase.
-2. `.github/workflows/deploy-stage.yml` para disparar un deploy en Vercel mediante hook.
-
-### Secrets en GitHub
-
-- `SUPABASE_DB_URL_STAGE`
-- `SUPABASE_PROJECT_REF_STAGE`
-- `VERCEL_DEPLOY_HOOK_URL_STAGE` *(opcional)*
-- `SUPABASE_ACCESS_TOKEN_STAGE` *(si se usa login de CLI)*
-
 Recordatorio: no exponer `SUPABASE_SERVICE_ROLE_STAGE` ni `SUPABASE_DB_URL_STAGE` en el código cliente.
+
+## CI/CD
+
+Prod (main): `pipeline-prod.yml` ⇒ migraciones con `--db-url` + deploy vía `VERCEL_DEPLOY_HOOK_URL`.
+
+Stage (stage): `pipeline-stage.yml` ⇒ migraciones con `--db-url` + deploy vía `VERCEL_DEPLOY_HOOK_URL_STAGE`.
+
+Recomendación: usar DB URL non-pooling para migraciones.
+
+Recordatorio: los workflows deben existir en la rama destino; por eso los versionamos en main y luego creamos stage desde main.
