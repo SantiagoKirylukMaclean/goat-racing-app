@@ -51,18 +51,23 @@ cp env/.env.stage.example .env.local
 npm run dev:stage
 ```
 
-### Pipeline
-
-Cada push o merge a `stage` ejecuta:
-
-1. `.github/workflows/db-migrate-stage.yml` para aplicar migraciones de Supabase.
-2. `.github/workflows/deploy-stage.yml` para disparar un deploy en Vercel mediante hook.
-
-### Secrets en GitHub
-
-- `SUPABASE_DB_URL_STAGE`
-- `SUPABASE_PROJECT_REF_STAGE`
-- `VERCEL_DEPLOY_HOOK_URL_STAGE` *(opcional)*
-- `SUPABASE_ACCESS_TOKEN_STAGE` *(si se usa login de CLI)*
-
 Recordatorio: no exponer `SUPABASE_SERVICE_ROLE_STAGE` ni `SUPABASE_DB_URL_STAGE` en el código cliente.
+
+## Pipelines
+
+Prod (main): corre `pipeline-prod.yml` → migraciones a `SUPABASE_DB_URL` → deploy vía `VERCEL_DEPLOY_HOOK_URL`.
+
+Stage (stage): corre `pipeline-stage.yml` → migraciones a `SUPABASE_DB_URL_STAGE` → deploy vía `VERCEL_DEPLOY_HOOK_URL_STAGE`.
+
+Se recomienda usar una URL de base de datos **non-pooling** para ejecutar migraciones.
+
+### Secrets requeridos
+
+- `SUPABASE_DB_URL`
+- `VERCEL_DEPLOY_HOOK_URL`
+- `SUPABASE_PROJECT_REF` *(opcional)*
+- `SUPABASE_ACCESS_TOKEN` *(opcional)*
+- `SUPABASE_DB_URL_STAGE`
+- `VERCEL_DEPLOY_HOOK_URL_STAGE`
+- `SUPABASE_PROJECT_REF_STAGE` *(opcional)*
+- `SUPABASE_ACCESS_TOKEN_STAGE` *(opcional)*

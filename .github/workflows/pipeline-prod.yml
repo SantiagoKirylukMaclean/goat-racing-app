@@ -1,0 +1,53 @@
+name: Production pipeline (Supabase migrate + Vercel deploy)
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: prod-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migrate-and-deploy-prod:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Aplicar migraciones a Prod
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -e
+          if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
+            supabase migration up --db-url "$SUPABASE_DB_URL" --non-interactive
+          else
+            echo "No hay migraciones en supabase/migrations; se omite."
+          fi
+
+      - name: (Opcional) Generar tipos TypeScript desde Supabase
+        if: ${{ env.SUPABASE_PROJECT_REF != '' && env.SUPABASE_ACCESS_TOKEN != '' }}
+        run: |
+          supabase gen types typescript \
+            --project-id "$SUPABASE_PROJECT_REF" \
+            --schema public > src/lib/database.types.ts || true
+          git status --porcelain | grep "database.types.ts" && echo "Tipos actualizados (no se commitea en CI)."
+
+      - name: Trigger Vercel Deploy (Prod)
+        env:
+          HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::error::Falta VERCEL_DEPLOY_HOOK_URL"; exit 1
+          fi
+          curl -s -X POST "$HOOK" && echo "Deploy hook enviado (Prod)."
