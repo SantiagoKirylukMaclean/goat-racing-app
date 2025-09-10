@@ -42,7 +42,6 @@ jobs:
             echo "::warning::La URL parece de pooling; se recomienda non-pooling para migraciones."
           fi
           if [ -d "supabase/migrations" ] && [ "$(ls -A supabase/migrations)" ]; then
-            # Reemplazo de --non-interactive por --yes
             supabase migration up --db-url "$SUPABASE_DB_URL" --yes
           else
             echo "No hay migraciones en supabase/migrations; se omite."
