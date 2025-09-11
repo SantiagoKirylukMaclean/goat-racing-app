@@ -63,3 +63,4 @@ Stage (stage): `pipeline-stage.yml` ⇒ migraciones con `--db-url` + deploy vía
 Recomendación: usar DB URL non-pooling para migraciones.
 
 Recordatorio: los workflows deben existir en la rama destino; por eso los versionamos en main y luego creamos stage desde main.
+test
