@@ -1,3 +1,22 @@
+import nextPWA from 'next-pwa'
+
+const withPWA = nextPWA({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+  workboxOptions: {
+    cleanupOutdatedCaches: true,
+    ignoreURLParametersMatching: [/.*/],
+    runtimeCaching: [
+      {
+        urlPattern: /^\/_next\/static\//,
+        handler: 'NetworkOnly',
+      },
+    ],
+  },
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -20,8 +39,24 @@ const nextConfig = {
           },
         ],
       },
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'header',
+            key: 'Accept',
+            value: 'text/html',
+          },
+        ],
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-store, must-revalidate',
+          },
+        ],
+      },
     ]
   },
 }
 
-export default nextConfig
+export default withPWA(nextConfig)

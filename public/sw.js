@@ -13,19 +13,25 @@ const urlsToCache = [
 ]
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting()
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)))
 })
 
 self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url)
+  if (url.pathname.startsWith("/_next/static/")) {
+    event.respondWith(fetch(event.request))
+    return
+  }
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // Return cached version or fetch from network
       return response || fetch(event.request)
     }),
   )
 })
 
 self.addEventListener("activate", (event) => {
+  self.clients.claim()
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
