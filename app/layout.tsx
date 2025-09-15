@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { Toaster } from "@/components/ui/toaster"
 import { Suspense } from "react"
+import ChunkRecovery from "./chunk-recovery"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -54,6 +55,7 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#000000" />
       </head>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
+        <ChunkRecovery />
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
             {children}
