@@ -5,16 +5,15 @@ const withPWA = nextPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  workboxOptions: {
-    cleanupOutdatedCaches: true,
-    ignoreURLParametersMatching: [/.*/],
-    runtimeCaching: [
-      {
-        urlPattern: /^\/_next\/static\//,
-        handler: 'NetworkOnly',
-      },
-    ],
-  },
+  // next-pwa@5 expects workbox/GenerateSW options at the top level
+  cleanupOutdatedCaches: true,
+  ignoreURLParametersMatching: [/.*/],
+  runtimeCaching: [
+    {
+      urlPattern: /^\/_next\/static\//,
+      handler: 'NetworkOnly',
+    },
+  ],
 })
 
 /** @type {import('next').NextConfig} */
